@@ -170,9 +170,19 @@ test('add menu item', async () => {
 });
   
 test('get menu', async () => {
+  const tempMenu = [{ title: 'tempItem', description: randomName(), image: randomName(), price: 0.10 }];
+  const getSpy = jest.spyOn(DB, 'getMenu').mockImplementation(async () => {
+    return [...tempMenu];
+  });
+  try{
   const res = await request(app).get('/api/order/menu');
   expect(res.status).toBe(200);
-  expect(res.body.length).toBeGreaterThan(0);
+  expect(res.body).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'tempItem', price: 0.10 })
+    ]));
+  } finally {
+    getSpy.mockRestore();
+  }
 });
 
 test('create order', async () => {
@@ -180,6 +190,11 @@ test('create order', async () => {
   const authToken = loginRes.body.token;
   expectValidJwt(authToken);
 
+  const tempMenu = [{ title: 'tempItem', description: 'Veggie', image: randomName(), price: 0.05 }];
+  const getSpy = jest.spyOn(DB, 'getMenu').mockImplementation(async () => {
+    return [...tempMenu];
+  });
+  try {
   const order = { franchiseId: 1, storeId: 1, items: [{ menuId: 1, description: 'Veggie', price: 0.05 }] };
   const orderRes = await request(app)
     .post('/api/order')
@@ -187,8 +202,15 @@ test('create order', async () => {
     .send(order);
     expect(orderRes.status).toBe(200);
     expect(orderRes.body).toMatchObject({ order: { franchiseId: 1, storeId: 1 } });
-    expect(orderRes.body.order.items.length).toBe(1);
+    expect(orderRes.body.order.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ description: 'Veggie', price: 0.05 })
+      ])
+    );
     expectValidJwt(orderRes.body.jwt);
+  } finally {
+    getSpy.mockRestore();
+  }
 });
 
 test('update user', async () => {
