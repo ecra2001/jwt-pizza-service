@@ -137,6 +137,34 @@ test('delete franchise', async () => {
   expect(deleteFranchiseRes.body).toMatchObject({ message: 'franchise deleted' });
 });
 
+test('delete store', async () => {
+  const adminUser = await createAdminUser();
+  const loginRes = await request(app).put('/api/auth').send(adminUser);
+  const adminAuthToken = loginRes.body.token;
+  expectValidJwt(adminAuthToken);
+  const franchise = { name: randomName(), admins: [{email: adminUser.email}] };
+  const createFranchiseRes = await request(app)
+    .post('/api/franchise')
+    .set('Authorization', `Bearer ${adminAuthToken}`)
+    .send(franchise);
+  expect(createFranchiseRes.status).toBe(200);
+  const franchiseId = createFranchiseRes.body.id;
+
+  const store = { name: randomName(), address: '123 main st', phone: '8015551212' };
+  const createStoreRes = await request(app)
+    .post(`/api/franchise/${franchiseId}/store`)
+    .set('Authorization', `Bearer ${adminAuthToken}`)
+    .send(store);
+  expect(createStoreRes.status).toBe(200);
+  const storeId = createStoreRes.body.id;
+  
+  const deleteStoreRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}/store/${storeId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteStoreRes.status).toBe(200);
+  expect(deleteStoreRes.body).toMatchObject({ message: 'store deleted' });
+});
+
 test('add menu item', async () => {
   const adminUser = await createAdminUser();
   const loginRes = await request(app).put('/api/auth').send(adminUser);
@@ -190,10 +218,15 @@ test('create order', async () => {
   const authToken = loginRes.body.token;
   expectValidJwt(authToken);
 
-  const tempMenu = [{ title: 'tempItem', description: 'Veggie', image: randomName(), price: 0.05 }];
-  const getSpy = jest.spyOn(DB, 'getMenu').mockImplementation(async () => {
-    return [...tempMenu];
-  });
+  const tempMenu = [ { id: 1, title: 'tempItem', description: 'Veggie', image: randomName(), price: 0.05 } ];
+  const fakeOrder = {
+    id: 123,
+    franchiseId: 1,
+    storeId: 1,
+    items: [tempMenu[0]]
+  };
+  const getSpy = jest.spyOn(DB, 'getMenu').mockResolvedValue(tempMenu);
+  const createOrderSpy = jest.spyOn(DB, 'addDinerOrder').mockResolvedValue(fakeOrder);
   try {
   const order = { franchiseId: 1, storeId: 1, items: [{ menuId: 1, description: 'Veggie', price: 0.05 }] };
   const orderRes = await request(app)
@@ -208,8 +241,13 @@ test('create order', async () => {
       ])
     );
     expectValidJwt(orderRes.body.jwt);
+    expect(createOrderSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ email: testUser.email }),
+      expect.objectContaining(order)
+    );
   } finally {
     getSpy.mockRestore();
+    createOrderSpy.mockRestore();
   }
 });
 
