@@ -57,6 +57,13 @@ test('create franchise', async () => {
     .send(franchise);
   expect(createRes.status).toBe(200);
   expect(createRes.body).toMatchObject({ name: franchise.name });
+
+  const franchiseId = createRes.body.id;
+  
+  const deleteFranchiseRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteFranchiseRes.status).toBe(200);
 });
 
 test('create store', async () => {
@@ -79,6 +86,11 @@ test('create store', async () => {
     .send(store);
   expect(createStoreRes.status).toBe(200);
   expect(createStoreRes.body).toMatchObject({ name: store.name });
+  
+  const deleteFranchiseRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteFranchiseRes.status).toBe(200);
 });
 
 test('get franchises', async () => {
@@ -96,6 +108,13 @@ test('get franchises', async () => {
   const getFranchisesRes = await request(app).get('/api/franchise');
   expect(getFranchisesRes.status).toBe(200);
   expect(getFranchisesRes.body.franchises.length).toBeGreaterThan(0);
+
+  const franchiseId = createFranchiseRes.body.id;
+  
+  const deleteFranchiseRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteFranchiseRes.status).toBe(200);
 });
 
 test('get user franchises', async () => {
@@ -115,6 +134,13 @@ test('get user franchises', async () => {
     .set('Authorization', `Bearer ${adminAuthToken}`);
   expect(getUserFranchisesRes.status).toBe(200);
   expect(getUserFranchisesRes.body.length).toBeGreaterThan(0);
+
+  const franchiseId = createFranchiseRes.body.id;
+  
+  const deleteFranchiseRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteFranchiseRes.status).toBe(200);
 });
 
 test('delete franchise', async () => {
@@ -163,6 +189,11 @@ test('delete store', async () => {
     .set('Authorization', `Bearer ${adminAuthToken}`);
   expect(deleteStoreRes.status).toBe(200);
   expect(deleteStoreRes.body).toMatchObject({ message: 'store deleted' });
+  
+  const deleteFranchiseRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(deleteFranchiseRes.status).toBe(200);
 });
 
 test('add menu item', async () => {
