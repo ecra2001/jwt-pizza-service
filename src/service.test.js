@@ -308,7 +308,7 @@ test('list users unauthorized', async () => {
 });
 
 test('list users', async () => {
-  const [user, userToken] = await registerUser(request(app));
+  const userToken = await registerUser(request(app));
   const listUsersRes = await request(app)
     .get('/api/user')
     .set('Authorization', 'Bearer ' + userToken);
@@ -324,7 +324,7 @@ async function registerUser(service) {
   const registerRes = await service.post('/api/auth').send(testUser);
   registerRes.body.user.password = testUser.password;
 
-  return [registerRes.body.user, registerRes.body.token];
+  return registerRes.body.token;
 }
 
 function randomName() {
