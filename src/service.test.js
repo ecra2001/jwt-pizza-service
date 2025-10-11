@@ -309,10 +309,106 @@ test('list users unauthorized', async () => {
 
 test('list users', async () => {
   const userToken = await registerUser(request(app));
+  await request(app)
+    .delete('/api/auth')
+    .set('Authorization', `Bearer ${userToken}`);
+
+  const adminUser = await createAdminUser();
+  const loginRes = await request(app).put('/api/auth').send(adminUser);
+  const adminAuthToken = loginRes.body.token;
+  expectValidJwt(adminAuthToken);
+
   const listUsersRes = await request(app)
     .get('/api/user')
-    .set('Authorization', 'Bearer ' + userToken);
+    .set('Authorization', 'Bearer ' + adminAuthToken);
+
   expect(listUsersRes.status).toBe(200);
+  expect(listUsersRes.body).toHaveProperty('users');
+  expect(Array.isArray(listUsersRes.body.users)).toBe(true);
+
+  listUsersRes.body.users.forEach(user => {
+    expect(user).toHaveProperty('id');
+    expect(user).toHaveProperty('name');
+    expect(user).toHaveProperty('email');
+    expect(user).toHaveProperty('roles');
+    expect(Array.isArray(user.roles)).toBe(true);
+  });
+});
+
+test('list users with pagination', async () => {
+  const adminUser = await createAdminUser();
+  const loginRes = await request(app).put('/api/auth').send(adminUser);
+  const adminAuthToken = loginRes.body.token;
+
+  const createdUsers = [];
+
+  try {
+    for (let i = 0; i < 15; i++) {
+      await registerUser(request(app));
+      
+      const listRes = await request(app)
+        .get('/api/user?name=pizza diner')
+        .set('Authorization', `Bearer ${adminAuthToken}`);
+      const newUser = listRes.body.users.find(u => u.name === 'pizza diner' && !createdUsers.some(cu => cu.id === u.id));
+      if (newUser) createdUsers.push(newUser);
+    }
+
+    const resPage1 = await request(app)
+      .get('/api/user?page=1&limit=10')
+      .set('Authorization', `Bearer ${adminAuthToken}`);
+    expect(resPage1.body.users.length).toBeLessThanOrEqual(10);
+
+    const resPage2 = await request(app)
+      .get('/api/user?page=2&limit=10')
+      .set('Authorization', `Bearer ${adminAuthToken}`);
+    expect(resPage2.body.users.length).toBeGreaterThan(0);
+
+  } finally {
+    for (const user of createdUsers) {
+      await request(app)
+        .delete(`/api/user/${user.id}`)
+        .set('Authorization', `Bearer ${adminAuthToken}`);
+    }
+  }
+});
+
+test('list users with name filter', async () => {
+  const adminUser = await createAdminUser();
+  const loginRes = await request(app).put('/api/auth').send(adminUser);
+  const adminAuthToken = loginRes.body.token;
+
+  const specialUser = {
+    name: 'SpecialUser123',
+    email: `${randomName()}@test.com`,
+    password: 'a'
+  };
+  await request(app).post('/api/auth').send(specialUser);
+
+  const filteredRes = await request(app)
+    .get('/api/user?name=SpecialUser123')
+    .set('Authorization', `Bearer ${adminAuthToken}`);
+  expect(filteredRes.body.users.length).toBeGreaterThan(0);
+  expect(filteredRes.body.users.every(u => u.name.includes('SpecialUser123'))).toBe(true);
+});
+
+test('delete user', async () => {
+  const adminUser = await createAdminUser();
+  const loginRes = await request(app).put('/api/auth').send(adminUser);
+  const adminAuthToken = loginRes.body.token;
+
+  const mockUser = { id: 9999, name: 'pizza diner', email: 'mock@test.com', roles: [{ role: 'diner' }] };
+  const listUsersSpy = jest.spyOn(DB, 'listUsers').mockResolvedValue([mockUser]);
+
+  try {
+    const deleteRes = await request(app)
+      .delete(`/api/user/${mockUser.id}`)
+      .set('Authorization', `Bearer ${adminAuthToken}`);
+
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body).toMatchObject({ message: 'user deleted' });
+  } finally {
+    listUsersSpy.mockRestore();
+  }
 });
 
 async function registerUser(service) {
@@ -324,7 +420,7 @@ async function registerUser(service) {
   const registerRes = await service.post('/api/auth').send(testUser);
   registerRes.body.user.password = testUser.password;
 
-  return registerRes.body.token;
+  return [registerRes.body.user, registerRes.body.token];
 }
 
 function randomName() {
