@@ -79,9 +79,9 @@ userRouter.put(
     const { name, email, password } = req.body;
     const userId = Number(req.params.userId);
     const user = req.user;
-    if (user.id !== userId && !user.isRole(Role.Admin)) {
-      return res.status(403).json({ message: "unauthorized" });
-    }
+    // if (user.id !== userId && !user.isRole(Role.Admin)) {
+    //   return res.status(403).json({ message: "unauthorized" });
+    // }
 
     const updatedUser = await DB.updateUser(userId, name, email, password);
     const auth = await setAuth(updatedUser);
