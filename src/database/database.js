@@ -117,14 +117,21 @@ class DB {
       if (sqlFilter === "%") {
         users = await this.query(
           connection,
-          `SELECT id, name, email FROM user LIMIT ${limit} OFFSET ${offset}`
+          `SELECT id, name, email FROM user LIMIT ${limit + 1} OFFSET ${offset}`
         );
       } else {
         users = await this.query(
           connection,
-          `SELECT id, name, email FROM user WHERE name LIKE ? LIMIT ${limit} OFFSET ${offset}`,
+          `SELECT id, name, email FROM user WHERE name LIKE ? LIMIT ${
+            limit + 1
+          } OFFSET ${offset}`,
           [sqlFilter]
         );
+      }
+
+      const more = users.length > limit;
+      if (more) {
+        users = users.slice(0, limit);
       }
 
       for (const user of users) {
@@ -139,7 +146,8 @@ class DB {
         }));
       }
 
-      return users;
+      // Return both users and more flag
+      return { users, more };
     } finally {
       connection.end();
     }

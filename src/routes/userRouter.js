@@ -91,15 +91,15 @@ userRouter.put(
 
 // listUsers
 userRouter.get(
-  "/",
+  '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const name = req.query.name || "*";
+    const name = req.query.name || '*';
 
-    const users = await DB.listUsers(page, limit, name);
-    res.json({ users, page, limit });
+    const { users, more } = await DB.listUsers(page, limit, name);
+    res.json({ users, more, page, limit });
   })
 );
 
