@@ -107,10 +107,10 @@ class DB {
     }
   }
 
-  async listUsers(page = 1, limit = 10, nameFilter = "*") {
+  async listUsers(page = 0, limit = 10, nameFilter = "*") {
     const connection = await this.getConnection();
     try {
-      const offset = (page - 1) * limit;
+      const offset = page  * limit;
       const sqlFilter = nameFilter.replace(/\*/g, "%");
 
       let users;
