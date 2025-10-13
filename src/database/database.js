@@ -110,7 +110,7 @@ class DB {
   async listUsers(page = 0, limit = 10, nameFilter = "*") {
     const connection = await this.getConnection();
     try {
-      const offset = page  * limit;
+      const offset = page * limit;
       const sqlFilter = nameFilter.replace(/\*/g, "%");
 
       let users;
@@ -156,7 +156,19 @@ class DB {
   async deleteUser(userId) {
     const connection = await this.getConnection();
     try {
-      await this.query(connection, `DELETE FROM user WHERE id=?`, [userId]);
+      await connection.beginTransaction();
+      try {
+        await this.query(connection, `DELETE FROM userRole WHERE userId=?`, [
+          userId,
+        ]);
+
+        await this.query(connection, `DELETE FROM user WHERE id=?`, [userId]);
+
+        await connection.commit();
+      } catch (err) {
+        await connection.rollback();
+        throw err;
+      }
     } finally {
       connection.end();
     }
