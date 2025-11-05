@@ -79,6 +79,7 @@ authRouter.put(
     try {
       user = await DB.getUser(email, password);
     } catch (err) {
+      console.error('Error during login:', err);
       metrics.authAttempt(false, null);
       return res.status(404).json({ message: 'unknown user' });
     }
