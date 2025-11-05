@@ -110,6 +110,7 @@ function getMemoryUsagePercentage() {
   return ((used / total) * 100).toFixed(2);
 }
 
+if (process.env.NODE_ENV !== 'test') {
 setInterval(() => {
   try {
     // HTTP Metrics
@@ -140,7 +141,8 @@ setInterval(() => {
   } catch (err) {
     console.error('Error sending metrics:', err);
   }
-}, 1000);
+}, 60000);
+}
 
 module.exports = {
   requestTracker,
