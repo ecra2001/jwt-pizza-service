@@ -54,8 +54,6 @@ function sendMetricToGrafana(metricName, metricValue, type, unit) {
         response.text().then((text) => {
           console.error(`Failed to push ${metricName}:\n${text}`);
         });
-      } else {
-        console.log(`Pushed ${metricName}`);
       }
     })
     .catch((error) => console.error('Error pushing metrics:', error));
