@@ -142,8 +142,13 @@ setInterval(() => {
 }, 1000); // NEED TO CHANGE
 }
 
+function userLoggedOut(userId) {
+  activeUsers.delete(userId);
+}
+
 module.exports = {
   requestTracker,
   authAttempt,
   pizzaPurchase,
+  userLoggedOut,
 };

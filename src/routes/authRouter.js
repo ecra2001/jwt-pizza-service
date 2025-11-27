@@ -95,6 +95,10 @@ authRouter.delete(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+    if (userId) {
+      metrics.userLoggedOut(userId);
+    }
     await clearAuth(req);
     res.json({ message: 'logout successful' });
   })
