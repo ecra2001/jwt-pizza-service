@@ -93,21 +93,29 @@ class Logger {
   }
 
   sendLogToGrafana(event) {
-    const body = JSON.stringify(event);
-    console.log("Sending log to Grafana:", body);
-    fetch(config.logging.url, {
-      method: "post",
-      body: body,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.logging.userId}:${config.logging.apiKey}`,
-      },
-    }).catch(() => {
+  const body = JSON.stringify(event);
+  console.log("Sending log to Grafana:", body);
+
+  fetch(config.logging.url, {
+    method: "post",
+    body: body,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.logging.userId}:${config.logging.apiKey}`,
+    },
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log("Grafana log push failed:", res.status, errorText);
+      }
+    })
+    .catch((err) => {
       if (process.env.NODE_ENV !== "test") {
-        console.log("Failed to send log to Grafana");
+        console.log("Failed to send log to Grafana:", err.message);
       }
     });
-  }
+}
 }
 
 module.exports = new Logger();
