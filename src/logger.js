@@ -1,17 +1,17 @@
-const fetch = require("node-fetch");
-const config = require("./config");
+const fetch = require('node-fetch');
+const config = require('./config');
 
 class Logger {
   constructor() {
-    process.on("uncaughtException", (err) => {
-      this.log("error", "exception", {
+    process.on('uncaughtException', (err) => {
+      this.log('error', 'exception', {
         message: err.message,
         stack: err.stack,
       });
     });
 
-    process.on("unhandledRejection", (reason) => {
-      this.log("error", "promiseRejection", { reason: JSON.stringify(reason) });
+    process.on('unhandledRejection', (reason) => {
+      this.log('error', 'promiseRejection', { reason: JSON.stringify(reason) });
     });
   }
 
@@ -29,7 +29,7 @@ class Logger {
       };
 
       const level = this.statusToLogLevel(res.statusCode);
-      this.log(level, "http", logData);
+      this.log(level, 'http', logData);
 
       return originalSend(resBody);
     };
@@ -39,21 +39,21 @@ class Logger {
 
   dbLogger(query) {
     const logData = { query };
-    this.log("info", "database", logData);
+    this.log('info', 'database', logData);
   }
 
   factoryLogger(requestBody, responseBody, success = true) {
-    const level = success ? "info" : "error";
+    const level = success ? 'info' : 'error';
     const logData = {
       requestBody: this.stringify(requestBody),
       responseBody: this.stringify(responseBody),
     };
-    this.log(level, "factory", logData);
+    this.log(level, 'factory', logData);
   }
 
   log(level, type, logData) {
     const labels = {
-      component: config.metrics.source || "jwt-pizza-service",
+      component: config.metrics.source || 'jwt-pizza-service',
       level: level,
       type: type,
     };
@@ -65,9 +65,9 @@ class Logger {
   }
 
   statusToLogLevel(statusCode) {
-    if (statusCode >= 500) return "error";
-    if (statusCode >= 400) return "warn";
-    return "info";
+    if (statusCode >= 500) return 'error';
+    if (statusCode >= 400) return 'warn';
+    return 'info';
   }
 
   nowString() {
@@ -88,33 +88,24 @@ class Logger {
     try {
       return JSON.stringify(obj);
     } catch {
-      return "[Unserializable object]";
+      return '[Unserializable object]';
     }
   }
 
   sendLogToGrafana(event) {
   const body = JSON.stringify(event);
-  console.log("Sending log to Grafana:", body);
-
   fetch(config.logging.url, {
-    method: "post",
+    method: 'post',
     body: body,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${config.logging.userId}:${config.logging.apiKey}`,
     },
-  })
-    .then(async (res) => {
-      if (!res.ok && process.env.NODE_ENV !== "test") {
-        const errorText = await res.text();
-        console.log("Grafana log push failed:", res.status, errorText);
-      }
-    })
-    .catch((err) => {
-      if (process.env.NODE_ENV !== "test") {
-        console.log("Failed to send log to Grafana:", err.message);
-      }
-    });
+  }).catch(() => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Failed to send log to Grafana');
+    }
+  });
 }
 }
 
