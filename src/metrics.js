@@ -139,7 +139,7 @@ setInterval(() => {
   } catch (err) {
     console.error('Error sending metrics:', err);
   }
-}, 60000);
+}, 1000); // NEED TO CHANGE
 }
 
 module.exports = {
