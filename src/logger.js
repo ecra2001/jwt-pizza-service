@@ -19,6 +19,14 @@ class Logger {
     const originalSend = res.send.bind(res);
 
     res.send = (resBody) => {
+      if (req.originalUrl.startsWith('/api/docs')) {
+        return originalSend(resBody);
+      }
+
+      if (res.statusCode === 404 && !req.originalUrl.startsWith('/api/')) {
+        return originalSend(resBody);
+      }
+
       const logData = {
         method: req.method,
         path: req.originalUrl,
