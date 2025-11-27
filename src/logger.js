@@ -105,7 +105,7 @@ class Logger {
     },
   })
     .then(async (res) => {
-      if (!res.ok !== "test") {
+      if (!res.ok && process.env.NODE_ENV !== "test") {
         const errorText = await res.text();
         console.log("Grafana log push failed:", res.status, errorText);
       }
